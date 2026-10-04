@@ -1,8 +1,23 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { supabase } from './supabase'
+import { supabase, REMEMBER_KEY } from './supabase'
 
 const AuthCtx = createContext(null)
 export const useAuth = () => useContext(AuthCtx)
+
+const EMAIL_KEY = 'chd_email'
+const ROLE_KEY = 'chd_role'
+const store = {
+  get: (k) => { try { return localStorage.getItem(k) } catch { return null } },
+  set: (k, v) => { try { localStorage.setItem(k, v) } catch { /* ignore */ } },
+  del: (k) => { try { localStorage.removeItem(k) } catch { /* ignore */ } },
+}
+
+// Values used by the login form to pre-fill itself
+export const getSavedLogin = () => ({
+  email: store.get(EMAIL_KEY) || '',
+  remember: store.get(REMEMBER_KEY) !== '0',
+  role: store.get(ROLE_KEY) === 'admin' ? 'admin' : 'user',
+})
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null)
@@ -19,12 +34,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let alive = true
     supabase.auth.getSession().then(async ({ data }) => {
-      let s = data.session
-      // "Remember me" unchecked → drop the session when the browser was closed
-      if (s && localStorage.getItem('chd_remember') === '0' && !sessionStorage.getItem('chd_active')) {
-        await supabase.auth.signOut()
-        s = null
-      }
+      const s = data.session
       if (!alive) return
       setSession(s)
       if (s) await loadProfile(s.user.id)
@@ -43,6 +53,8 @@ export function AuthProvider({ children }) {
   }, [loadProfile])
 
   const signIn = async (email, password, remember, expectedRole) => {
+    // Must be saved first: supabase.js reads it to pick localStorage vs sessionStorage.
+    store.set(REMEMBER_KEY, remember ? '1' : '0')
     const { data, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) throw error
     const p = await loadProfile(data.user.id)
@@ -54,12 +66,14 @@ export function AuthProvider({ children }) {
           : 'This is an administrator account. Use the Administrator tab instead.',
       )
     }
-    localStorage.setItem('chd_remember', remember ? '1' : '0')
-    sessionStorage.setItem('chd_active', '1')
+    if (remember) store.set(EMAIL_KEY, email)
+    else store.del(EMAIL_KEY)
+    store.set(ROLE_KEY, expectedRole)
     return p
   }
 
   const signUp = async ({ email, password, fullName, businessName }) => {
+    store.set(REMEMBER_KEY, '1')
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -71,7 +85,6 @@ export function AuthProvider({ children }) {
 
   const signOut = async () => {
     await supabase.auth.signOut()
-    sessionStorage.removeItem('chd_active')
   }
 
   const resetPassword = async (email) => {

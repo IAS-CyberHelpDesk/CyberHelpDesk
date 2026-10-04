@@ -1,3 +1,7 @@
+// Drop your logo at public/logo.png (square image works best). It is shown inside a circle.
+// If the file is missing, the cyan circle from the Figma design is shown instead.
+export const LOGO_URL = '/logo.png'
+
 export const INCIDENT_TYPES = ['Phishing', 'Malware', 'Suspicious Link', 'Unauthorized Access', 'Compromised Account', 'Other']
 export const SEVERITIES = ['low', 'medium', 'high']
 export const CHANNELS = ['Bank Transfer', 'GCash', 'Maya', 'PayPal', 'Check', 'Cash']

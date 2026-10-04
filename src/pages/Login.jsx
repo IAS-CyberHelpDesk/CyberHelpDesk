@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { useAuth } from '../lib/AuthContext'
+import { Eye, EyeOff } from 'lucide-react'
+import { getSavedLogin, useAuth } from '../lib/AuthContext'
 import { Segmented, Field, errMsg } from '../components/ui'
+import { Logo } from '../components/Layout'
 
 export default function Login() {
   const { session, profile, signIn, signUp, resetPassword } = useAuth()
   const nav = useNavigate()
-  const [role, setRole] = useState('user')
+  const saved = getSavedLogin() // remembered email / checkbox / last role tab
+  const [role, setRole] = useState(saved.role)
   const [mode, setMode] = useState('login') // login | signup
-  const [f, setF] = useState({ email: '', password: '', fullName: '', businessName: '', remember: true })
+  const [f, setF] = useState({ email: saved.email, password: '', fullName: '', businessName: '', remember: saved.remember })
+  const [showPw, setShowPw] = useState(false)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [info, setInfo] = useState('')
@@ -27,12 +31,13 @@ export default function Login() {
         const res = await signUp(f)
         if (!res.session) {
           setInfo('Account created. Check your email to confirm it, then log in.')
+          setF((x) => ({ ...x, password: '' }))
           setMode('login')
         } else {
           nav('/status')
         }
       } else {
-        const p = await signIn(f.email, f.password, f.remember, role)
+        const p = await signIn(f.email.trim(), f.password, f.remember, role)
         nav(p.role === 'admin' ? '/admin' : '/status')
       }
     } catch (e2) {
@@ -46,7 +51,7 @@ export default function Login() {
     if (!f.email) return setErr('Enter your email address first, then choose “Forgot password?”.')
     setErr('')
     try {
-      await resetPassword(f.email)
+      await resetPassword(f.email.trim())
       setInfo('If that email has an account, a reset link is on its way.')
     } catch (e2) { setErr(errMsg(e2)) }
   }
@@ -55,7 +60,7 @@ export default function Login() {
     <div className="login">
       <section className="login-brand">
         <div className="login-brand-inner">
-          <div className="side-logo"><span className="logo-dot" /><span>CyberHelpDesk</span></div>
+          <Logo />
           <h1>Secure Help Desk for Small Enterprises</h1>
           <p>A centralized portal for reporting cybersecurity incidents, verifying suspicious transactions, and tracking resolution — built for SMEs without a dedicated IT security team.</p>
           <ul>
@@ -82,13 +87,18 @@ export default function Login() {
           )}
           <Field label="Email address"><input className="input" type="email" required autoComplete="email" value={f.email} onChange={set('email')} placeholder="you@business.com" /></Field>
           <Field label="Password" hint={mode === 'signup' ? 'At least 12 characters with a mix of letters, numbers and symbols.' : undefined}>
-            <input className="input" type="password" required autoComplete={mode === 'login' ? 'current-password' : 'new-password'} value={f.password} onChange={set('password')} placeholder="••••••••••" />
+            <span className="pw-wrap">
+              <input className="input" type={showPw ? 'text' : 'password'} required autoComplete={mode === 'login' ? 'current-password' : 'new-password'} value={f.password} onChange={set('password')} placeholder="••••••••••" />
+              <button type="button" className="pw-toggle" onClick={() => setShowPw(!showPw)} aria-label={showPw ? 'Hide password' : 'Show password'}>
+                {showPw ? <EyeOff size={17} /> : <Eye size={17} />}
+              </button>
+            </span>
           </Field>
 
           {mode === 'login' && (
-            <div className="row between">
+            <div className="row between wrap">
               <label className="check"><input type="checkbox" checked={f.remember} onChange={set('remember')} /> Remember me</label>
-              <button type="button" className="link" onClick={forgot}>Forgot password?</button>
+              <button type="button" className="link small" onClick={forgot}>Forgot password?</button>
             </div>
           )}
 
