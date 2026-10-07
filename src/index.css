@@ -94,6 +94,36 @@ img { max-width: 100%; }
 .foot-link.active { color: #fff; background: var(--navy-3); }
 .scrim { display: none; }
 
+.password-requirements {
+  margin-top: -6px;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--surface, #f7f8fa);
+}
+
+.password-requirements-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.password-rule {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.78rem;
+  margin-top: 5px;
+}
+
+.password-rule.valid {
+  color: #198754;
+}
+
+.password-rule.invalid {
+  color: #6c757d;
+}
+
 /* topbar */
 .topbar {
   display: flex; align-items: center; justify-content: space-between; gap: 16px;
