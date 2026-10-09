@@ -91,21 +91,52 @@ export default function UserItemDetail() {
 
             <div className="card">
               <h2 className="h-md">Conversation</h2>
-              <div className="thread">
-                {messages.length === 0 && <p className="muted">No messages yet.</p>}
-                {messages.map((m) => {
-                  const mine = m.author_id === profile.id
-                  return (
-                    <div className={`msg ${mine ? '' : 'staff'}`} key={m.id}>
-                      <Avatar name={m.author?.full_name} src={m.author?.avatar_url} size={32} tone={mine ? 'gray' : 'blue'} />
-                      <div>
-                        <div className="msg-meta"><b>{mine ? 'You' : m.author?.full_name}</b>{!mine && <Badge kind="new">Support</Badge>}<span>{fmtTime(m.created_at)} · {fmtDate(m.created_at)}</span></div>
-                        <div className="bubble">{m.body}</div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
+              
+<div className="thread">
+  {messages.length === 0 && (
+    <p className="muted">No messages yet.</p>
+  )}
+
+  {messages.map((m) => {
+    const system = m.is_system === true
+    const mine = !system && m.author_id === profile.id
+
+    const sender = system
+      ? 'CyberHelpDesk'
+      : mine
+        ? 'You'
+        : m.author?.full_name || 'Support'
+
+    return (
+      <div
+        className={`msg ${mine || system ? '' : 'staff'}`}
+        key={m.id}
+      >
+        <Avatar
+          name={sender}
+          src={system ? undefined : m.author?.avatar_url}
+          size={32}
+          tone={mine ? 'gray' : 'blue'}
+        />
+
+        <div>
+          <div className="msg-meta">
+            <b>{sender}</b>
+
+            {system && <Badge kind="new">System</Badge>}
+            {!mine && !system && <Badge kind="new">Support</Badge>}
+
+            <span>
+              {fmtTime(m.created_at)} · {fmtDate(m.created_at)}
+            </span>
+          </div>
+
+          <div className="bubble">{m.body}</div>
+        </div>
+      </div>
+    )
+  })}
+</div>
               {closed ? <p className="muted small">This ticket is resolved. Report a new incident if the problem comes back.</p> : (
                 <form onSubmit={send} className="stack gap8">
                   <textarea ref={replyRef} className="textarea" rows={3} value={body} onChange={(e) => setBody(e.target.value)} placeholder="Write a reply…" />
